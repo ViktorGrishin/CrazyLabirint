@@ -71,6 +71,12 @@ class Cell:
     def rotate(self, clockwise=True):
         pass
 
+    def give_card(self):
+        return self.card
+
+    def __str__(self):
+        return self.kind, self.rotation, self.card
+
 
 class Board:
     def __init__(self, size=7, classic=True):
