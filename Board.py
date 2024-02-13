@@ -66,13 +66,21 @@ class Cell:
                 self.image.blit(card_image, (width // 2, height // 2))
 
         else:
-            self.image = (self.kind, self.rotation)
+            print('Нет изображений')
+            terminate()
 
     def rotate(self, clockwise=True):
-        pass
+        angle = 90
+        if clockwise:
+            angle = -90
+        self.image = pygame.transform.rotate(self.image, angle)
+        self.rotation = (angle + self.rotation) % 360
 
-    def give_card(self):
+    def get_card(self):
         return self.card
+
+    def render(self, screen, cords):
+        screen.blit(self.image, cords)
 
     def __str__(self):
         return self.kind, self.rotation, self.card
