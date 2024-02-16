@@ -3,20 +3,21 @@ import random
 import pygame
 import os
 import sys
+from copy import deepcopy
 
 # карты представлены числами для возможности изменения их облика. Начинаем с 1 для возожности булевого сранения
 CARDS = list(range(1, 25))
+SPACING = 5  # Зазор между карточками на поле
 COLOR_KEY = None
 CELL_SIZE = 50
-DEFAULT_BOARD = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [0, 101, 0, 1, 0, 2, 0, 102, 0],
-                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [0, 3, 0, 4, 0, 5, 0, 6, 0],
-                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [0, 7, 0, 8, 0, 9, 0, 10, 0],
-                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [0, 103, 0, 11, 0, 12, 0, 104, 0]]
+SPECIAL_CELL_CORDS = 50, 50
+DEFAULT_BOARD = [[101, 0, 1, 0, 2, 0, 102],
+                 [0, 0, 0, 0, 0, 0, 0],
+                 [3, 0, 4, 0, 5, 0, 6],
+                 [0, 0, 0, 0, 0, 0, 0],
+                 [7, 0, 8, 0, 9, 0, 10],
+                 [0, 0, 0, 0, 0, 0, 0],
+                 [103, 0, 11, 0, 12, 0, 104]]
 
 
 def terminate():
@@ -91,17 +92,18 @@ class Cell:
 
 
 class Board:
-    def __init__(self):
+    def __init__(self, cords):
+        self.cords = cords
+
         kinds = {1: 16,  # Угловые
                  2: 6,  # Т-образные
                  3: 12  # Прямые
                  }
         ost_cards = list(range(13, 25)) + [0] * 34
-        self.board = []
-        for i in range(len(DEFAULT_BOARD)):
-            self.board.append([])
-            for j in range(len(DEFAULT_BOARD[0])):
-                card = DEFAULT_BOARD[i][j]
+        self.board = deepcopy(DEFAULT_BOARD)
+        for i in range(len(self.board)):
+            for j in range(len(self.board[0])):
+                card = self.board[i][j]
                 if card == 0:
                     # Пустая клетка
                     # Случайным образом определяем тип и карточку клетки
@@ -163,8 +165,32 @@ class Board:
                         rotation = 270
 
                 cell = Cell(kind, card, rotation)
-                self.board.append(cell)
+                self.board[i][j] = cell
 
+        cans = []
+        if kinds[1]:
+            cans.append(1)
+        if kinds[2]:
+            cans.append(2)
+        if kinds[3]:
+            cans.append(3)
+
+        card = random.choice(ost_cards)
+        ost_cards.remove(card)
+
+        kind = random.choice(cans)
+        kinds[kind] -= 1
+        # Если тип клетки - прямая, то на ней ничего не размещается
+        if kind == 3:
+            rotation = random.choice([0, 90])
+        else:
+
+            rotation = random.choice([0, 90, 180, 270])
+
+        self.special_cell = Cell(kind, card, rotation)  # карточка, которой всех двигают
+        self.cell_size = self.special_cell.image.get_size()[0]
+        self.special_cell_cords = None
+        # Загружаем фон
         fullname = os.path.join('data', 'images', 'board.png')
         if os.path.isfile(fullname):
             self.start_screen = pygame.image.load(fullname)
@@ -180,6 +206,7 @@ class Board:
                 self.start_screen = self.start_screen.convert_alpha()
 
         # Отрисовываем карточки на основном экране поля
+        self.board_screen = self.start_screen.copy()
         self.update_board_screen()
 
         # self.board[i][j]
@@ -191,7 +218,15 @@ class Board:
 
     def update_board_screen(self):
         self.board_screen = self.start_screen.copy()
-
+        left, top = self.cords
         for i in range(len(self.board)):
             for j in range(len(self.board[0])):
-                pass
+                self.board[i][j].render(self.board_screen,
+                                        (left + (self.cell_size + SPACING) * i, top + (self.cell_size + SPACING) * j))
+        if not self.special_cell_cords is None:
+            self.special_cell.render(self.board_screen,
+                                     (left + (self.cell_size + SPACING) * self.special_cell_cords[0],
+                                      top + (self.cell_size + SPACING) * self.special_cell_cords[1]))
+
+        else:
+            self.special_cell.render(self.board_screen, SPECIAL_CELL_CORDS)
