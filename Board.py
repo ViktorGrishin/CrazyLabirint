@@ -230,3 +230,47 @@ class Board:
 
         else:
             self.special_cell.render(self.board_screen, SPECIAL_CELL_CORDS)
+
+    def move_labyrinth(self):
+        if self.special_cell_cords is None:
+            return 'Выберете ряд'
+
+        if self.special_cell_cords[0] == 0:
+            # Двигаем сверху вниз
+            j = self.special_cell_cords[1]
+            special = self.board[len(self.board) - 1][j]
+            for i in range(len(self.board) - 1, 0, -1):
+                self.board[i][j] = self.board[i - 1][j]
+
+            self.board[0][j] = self.special_cell
+            self.special_cell = special
+
+        elif self.special_cell_cords[0] == len(self.board) - 1:
+            # Двигаем снизу вверх
+            j = self.special_cell_cords[1]
+            special = self.board[0][j]
+            for i in range(0, len(self.board) - 1):
+                self.board[i][j] = self.board[i + 1][j]
+
+            self.board[0][len(self.board) - 1] = self.special_cell
+            self.special_cell = special
+
+        elif self.special_cell_cords[1] == 0:
+            # Двигаем справа налево
+            i = self.special_cell_cords[0]
+            special = self.board[i][len(self.board) - 1]
+            for j in range(len(self.board) - 1, 0, -1):
+                self.board[i][j] = self.board[i][j - 1]
+
+            self.board[i][0] = self.special_cell
+            self.special_cell = special
+
+        else:
+            # Двигаем справа налево
+            i = self.special_cell_cords[0]
+            special = self.board[i][0]
+            for j in range(0, len(self.board) - 1):
+                self.board[i][j] = self.board[i][j + 1]
+
+            self.board[len(self.board) - 1][0] = self.special_cell
+            self.special_cell = special
