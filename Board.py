@@ -8,9 +8,9 @@ from copy import deepcopy
 # карты представлены числами для возможности изменения их облика. Начинаем с 1 для возожности булевого сранения
 CARDS = list(range(1, 25))
 SPACING = 5  # Зазор между карточками на поле
-COLOR_KEY = None
+COLOR_KEY = -1
 CELL_SIZE = 50
-SPECIAL_CELL_CORDS = 50, 50
+SPECIAL_CELL_CORDS = 500, 500
 DEFAULT_BOARD = [[101, 0, 1, 0, 2, 0, 102],
                  [0, 0, 0, 0, 0, 0, 0],
                  [3, 0, 4, 0, 5, 0, 6],
@@ -35,7 +35,7 @@ class Cell:
 
         # Загрузка основы
 
-        fullname = os.path.join('data', 'images', 'cells', str(self.kind) + 'png')
+        fullname = os.path.join('data', 'images', 'cells', str(self.kind) + '.png')
         if os.path.isfile(fullname):
             self.image = pygame.image.load(fullname)
             # Обработка фона
@@ -65,10 +65,11 @@ class Cell:
                     card_image = card_image.convert_alpha()
 
                 # Накладываем изображение карточки на тайл ровно по центру
-                width, height = self.image.get_size()
-                self.image.blit(card_image, (width // 2, height // 2))
+                w, h = self.image.get_size()
+                w1, h2 = card_image.get_size()
+                self.image.blit(card_image, (w // 2 - w1 // 2, h // 2 - h2 // 2))
 
-            self.image = pygame.transform.rotate(self.image, self.rotation)
+            self.image = pygame.transform.rotate(self.image, -self.rotation)
 
         else:
             print('Нет изображений')
@@ -101,8 +102,8 @@ class Board:
                  }
         ost_cards = list(range(13, 25)) + [0] * 34
         self.board = deepcopy(DEFAULT_BOARD)
-        for i in range(len(self.board)):
-            for j in range(len(self.board[0])):
+        for j in range(len(self.board)):
+            for i in range(len(self.board[0])):
                 card = self.board[i][j]
                 if card == 0:
                     # Пустая клетка
@@ -128,11 +129,11 @@ class Board:
                 elif 101 <= card <= 104:
                     # Угловая стартовая клетка
                     kind = 1
-                    if (i, j) == (1, 1):
+                    if (i, j) == (0, 0):
                         rotation = 90
-                    elif (i, j) == (1, len(DEFAULT_BOARD[0]) - 1):
+                    elif (i, j) == (0, len(DEFAULT_BOARD[0]) - 1):
                         rotation = 180
-                    elif (i, j) == (len(DEFAULT_BOARD[0]) - 1, 1):
+                    elif (i, j) == (len(DEFAULT_BOARD[0]) - 1, 0):
                         rotation = 0
                     else:
                         rotation = 270
@@ -140,28 +141,28 @@ class Board:
                 else:
                     # Т-образный перекрёсток со строго определённой карточкой
                     kind = 2
-                    if i == 1:
+                    if i == 0:
                         rotation = 180
 
                     elif i == len(DEFAULT_BOARD[0]) - 1:
                         rotation = 0
 
-                    elif j == 1:
+                    elif j == 0:
                         rotation = 90
 
                     elif i == len(DEFAULT_BOARD[0]) - 1:
                         rotation = 270
 
-                    elif (i, j) == (3, 3):
+                    elif (i, j) == (2, 2):
                         rotation = 90
 
-                    elif (i, j) == (3, 5):
+                    elif (i, j) == (2, 4):
                         rotation = 180
 
-                    elif (i, j) == (5, 3):
+                    elif (i, j) == (4, 2):
                         rotation = 0
 
-                    else:  # (5, 5)
+                    else:  # (4, 4)
                         rotation = 270
 
                 cell = Cell(kind, card, rotation)
@@ -216,20 +217,23 @@ class Board:
         #     # Генерация случайного игрового поля
         #     self.board = [[] * size for _ in range(size)]
 
+    def render(self, screen):
+        screen.blit(self.board_screen, self.cords)
+
     def update_board_screen(self):
         self.board_screen = self.start_screen.copy()
-        left, top = self.cords
-        for i in range(len(self.board)):
-            for j in range(len(self.board[0])):
+        for j in range(len(self.board)):
+            for i in range(len(self.board[0])):
                 self.board[i][j].render(self.board_screen,
-                                        (left + (self.cell_size + SPACING) * i, top + (self.cell_size + SPACING) * j))
+                                        ((self.cell_size + SPACING) * i, (self.cell_size + SPACING) * j))
         if not self.special_cell_cords is None:
             self.special_cell.render(self.board_screen,
-                                     (left + (self.cell_size + SPACING) * self.special_cell_cords[0],
-                                      top + (self.cell_size + SPACING) * self.special_cell_cords[1]))
+                                     ((self.cell_size + SPACING) * self.special_cell_cords[0],
+                                      (self.cell_size + SPACING) * self.special_cell_cords[1]))
 
         else:
-            self.special_cell.render(self.board_screen, SPECIAL_CELL_CORDS)
+            self.special_cell.render(self.board_screen,
+                                     ((self.cell_size + SPACING) * 7, (self.cell_size + SPACING) * 0))
 
     def move_labyrinth(self):
         if self.special_cell_cords is None:
@@ -274,3 +278,25 @@ class Board:
 
             self.board[len(self.board) - 1][0] = self.special_cell
             self.special_cell = special
+
+
+pygame.init()
+size = width, height = 1800, 800
+screen = pygame.display.set_mode(size)
+
+if __name__ == '__main__':
+    a = Board((0, 0))
+    running = True
+    print(a.board[0][1].rotation)
+    print(a.board[1][0].rotation)
+    print(a.board[0][2].rotation)
+    print(a.board[2][0].rotation)
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        a.render(screen)
+        pygame.display.flip()
+
+    terminate()
