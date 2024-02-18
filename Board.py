@@ -63,12 +63,9 @@ class Cell:
                         card_image.set_colorkey(COLOR_KEY)
                 else:
                     card_image = card_image.convert_alpha()
-
-                # Накладываем изображение карточки на тайл ровно по центру
-                w, h = self.image.get_size()
-                w1, h2 = card_image.get_size()
-                self.image.blit(card_image, (w // 2 - w1 // 2, h // 2 - h2 // 2))
-
+                self.card_image = card_image
+            else:
+                self.card_image = None
             self.image = pygame.transform.rotate(self.image, -self.rotation)
 
         else:
@@ -86,10 +83,15 @@ class Cell:
         return self.card
 
     def render(self, screen, cords):
+        if not self.card_image is None:
+            # Накладываем изображение карточки на тайл ровно по центру
+            w, h = self.image.get_size()
+            w1, h2 = self.card_image.get_size()
+            self.image.blit(self.card_image, (w // 2 - w1 // 2, h // 2 - h2 // 2))
         screen.blit(self.image, cords)
 
     def __str__(self):
-        return self.kind, self.rotation, self.card
+        return ' '.join(map(str, (self.kind, self.rotation, self.card)))
 
 
 class Board:
@@ -224,7 +226,7 @@ class Board:
         self.board_screen = self.start_screen.copy()
         for j in range(len(self.board)):
             for i in range(len(self.board[0])):
-                self.board[i][j].render(self.board_screen,
+                self.board[j][i].render(self.board_screen,
                                         ((self.cell_size + SPACING) * i, (self.cell_size + SPACING) * j))
         if not self.special_cell_cords is None:
             self.special_cell.render(self.board_screen,
@@ -287,10 +289,11 @@ screen = pygame.display.set_mode(size)
 if __name__ == '__main__':
     a = Board((0, 0))
     running = True
-    print(a.board[0][1].rotation)
-    print(a.board[1][0].rotation)
-    print(a.board[0][2].rotation)
-    print(a.board[2][0].rotation)
+    print(str(a.board[0][0]))
+    print(str(a.board[0][1]))
+    print(str(a.board[1][0]))
+    # print(str(a.board[0][0]))
+    # print(str(a.board[0][0]))
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
