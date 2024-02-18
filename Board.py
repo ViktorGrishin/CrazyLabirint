@@ -8,7 +8,7 @@ from copy import deepcopy
 # карты представлены числами для возможности изменения их облика. Начинаем с 1 для возожности булевого сранения
 CARDS = list(range(1, 25))
 SPACING = 5  # Зазор между карточками на поле
-COLOR_KEY = -1
+COLOR_KEY = (255, 255, 255)
 CELL_SIZE = 50
 SPECIAL_CELL_CORDS = 500, 500
 DEFAULT_BOARD = [[101, 0, 1, 0, 2, 0, 102],
@@ -95,8 +95,9 @@ class Cell:
 
 
 class Board:
-    def __init__(self, cords):
-        self.cords = cords
+    def __init__(self, cords=(0, 0), board_size=(1, 1)):
+        self.board_size = board_size  # Коэффициент увеличения изображения поля в зависимости от экрана
+        self.cords = self.left, self.top = cords
 
         kinds = {1: 16,  # Угловые
                  2: 6,  # Т-образные
@@ -104,6 +105,7 @@ class Board:
                  }
         ost_cards = list(range(13, 25)) + [0] * 34
         self.board = deepcopy(DEFAULT_BOARD)
+        self.width, self.height = len(self.board), len(self.board[0])
         for j in range(len(self.board)):
             for i in range(len(self.board[0])):
                 card = self.board[i][j]
@@ -222,26 +224,38 @@ class Board:
     def render(self, screen):
         screen.blit(self.board_screen, self.cords)
 
+    def set_view(self, cords, board_size):
+        self.cords = cords
+        self.board_size = board_size
+        self.update_board_screen()
+
     def update_board_screen(self):
         self.board_screen = self.start_screen.copy()
         for j in range(len(self.board)):
             for i in range(len(self.board[0])):
                 self.board[j][i].render(self.board_screen,
-                                        ((self.cell_size + SPACING) * i, (self.cell_size + SPACING) * j))
+                                        ((self.cell_size + SPACING) * i + self.cell_size,
+                                         (self.cell_size + SPACING) * j + self.cell_size))
         if not self.special_cell_cords is None:
             self.special_cell.render(self.board_screen,
-                                     ((self.cell_size + SPACING) * self.special_cell_cords[0],
-                                      (self.cell_size + SPACING) * self.special_cell_cords[1]))
+                                     (((self.cell_size + SPACING) * self.special_cell_cords[1] + self.cell_size),
+                                      ((self.cell_size + SPACING) * self.special_cell_cords[0] + self.cell_size)),
+                                     )
 
         else:
             self.special_cell.render(self.board_screen,
-                                     ((self.cell_size + SPACING) * 7, (self.cell_size + SPACING) * 0))
+                                     ((self.cell_size + SPACING) * 7 + self.cell_size,
+                                      (self.cell_size + SPACING) * 0 + self.cell_size))
+        # Изменяем размеры поля по коэффициентам
+        w, h = self.board_screen.get_size()
+        w1, h1 = w * self.board_size[0], h * self.board_size[1]
+        self.board_screen = pygame.transform.scale(self.board_screen, (w1, h1))
 
     def move_labyrinth(self):
         if self.special_cell_cords is None:
-            return 'Выберете ряд'
+            return 'Выберите ряд'
 
-        if self.special_cell_cords[0] == 0:
+        if self.special_cell_cords[0] == -1:
             # Двигаем сверху вниз
             j = self.special_cell_cords[1]
             special = self.board[len(self.board) - 1][j]
@@ -251,7 +265,7 @@ class Board:
             self.board[0][j] = self.special_cell
             self.special_cell = special
 
-        elif self.special_cell_cords[0] == len(self.board) - 1:
+        elif self.special_cell_cords[0] == len(self.board):
             # Двигаем снизу вверх
             j = self.special_cell_cords[1]
             special = self.board[0][j]
@@ -261,7 +275,7 @@ class Board:
             self.board[0][len(self.board) - 1] = self.special_cell
             self.special_cell = special
 
-        elif self.special_cell_cords[1] == 0:
+        elif self.special_cell_cords[1] == -1:
             # Двигаем справа налево
             i = self.special_cell_cords[0]
             special = self.board[i][len(self.board) - 1]
@@ -280,26 +294,65 @@ class Board:
 
             self.board[len(self.board) - 1][0] = self.special_cell
             self.special_cell = special
+        self.special_cell_cords = None
+        self.update_board_screen()
+
+    def get_cell(self, mouse_pos):
+        k = self.board_size[0]
+        left = self.left + (self.cell_size + SPACING) * k
+        top = self.top + (self.cell_size + SPACING) * k
+        # Проверка наличия мыши в пределах поля
+        if (mouse_pos[0] < left or mouse_pos[0] > (
+                left + self.width * (self.cell_size + SPACING) * k) or
+                mouse_pos[1] < top or mouse_pos[1] > (
+                        top + self.height * (self.cell_size + SPACING) * k)):
+            return None
+
+        # Находим столбец
+        cell = [0, 0]
+        for i in range(self.width):
+            if mouse_pos[0] < left + (self.cell_size + SPACING) * (i + 1) * k:
+                cell[1] = i
+                break
+
+        # Находим строку
+        for i in range(self.height):
+            if mouse_pos[1] < top + (self.cell_size + SPACING) * (i + 1) * k:
+                cell[0] = i
+                break
+
+        return tuple(cell)
+
+    def get_click(self, mouse_pos):
+        cell = self.get_cell(mouse_pos)
+        if cell is not None:
+            if cell[0] == 0:
 
 
-pygame.init()
-size = width, height = 1800, 800
-screen = pygame.display.set_mode(size)
 
 if __name__ == '__main__':
-    a = Board((0, 0))
+    pygame.init()
+    size = width, height = 1800, 800
+    # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode(size)
+    k = 0
+    a = Board((100, 100), (0.35, 0.35))
+    a.special_cell_cords = -1, 1
+    a.update_board_screen()
     running = True
-    print(str(a.board[0][0]))
-    print(str(a.board[0][1]))
-    print(str(a.board[1][0]))
-    # print(str(a.board[0][0]))
-    # print(str(a.board[0][0]))
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                cell = a.get_cell(event.pos)
+                print(cell)
+        if k == 1000:
+            print(a.move_labyrinth())
         a.render(screen)
         pygame.display.flip()
+        k += 1
 
     terminate()
