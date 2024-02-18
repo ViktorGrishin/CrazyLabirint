@@ -195,7 +195,7 @@ class Board:
         self.special_cell = Cell(kind, card, rotation)  # карточка, которой всех двигают
         self.cell_size = self.special_cell.image.get_size()[0]
         self.special_cell_cords = None
-        self.last_move = None
+        self.canceled_move = None
         # Загружаем фон
         fullname = os.path.join('data', 'images', 'board.png')
         if os.path.isfile(fullname):
@@ -255,7 +255,7 @@ class Board:
     def move_labyrinth(self):
         if self.special_cell_cords is None:
             return 'Выберите ряд'
-        if self.special_cell_cords == self.last_move:
+        if self.special_cell_cords == self.canceled_move:
             return 'Этот ход уже был'
         if self.special_cell_cords[0] == -1:
             # Двигаем сверху вниз
@@ -266,7 +266,7 @@ class Board:
 
             self.board[0][j] = self.special_cell
             self.special_cell = special
-            self.last_move = len(self.board), j
+            self.canceled_move = len(self.board), j
 
         elif self.special_cell_cords[0] == len(self.board):
             # Двигаем снизу вверх
@@ -277,7 +277,7 @@ class Board:
 
             self.board[len(self.board) - 1][j] = self.special_cell
             self.special_cell = special
-            self.last_move = -1, j
+            self.canceled_move = -1, j
 
         elif self.special_cell_cords[1] == -1:
             # Двигаем справа налево
@@ -288,7 +288,7 @@ class Board:
 
             self.board[i][0] = self.special_cell
             self.special_cell = special
-            self.last_move = i, len(self.board)
+            self.canceled_move = i, len(self.board)
 
         elif self.special_cell_cords[1] == len(self.board):
             # Двигаем справа налево
@@ -299,7 +299,7 @@ class Board:
 
             self.board[i][len(self.board) - 1] = self.special_cell
             self.special_cell = special
-            self.last_move = i, -1
+            self.canceled_move = i, -1
 
         self.special_cell_cords = None
         self.update_board_screen()
