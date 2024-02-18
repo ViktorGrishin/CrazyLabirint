@@ -323,22 +323,26 @@ class Board:
 
         return tuple(cell)
 
-    def get_click(self, mouse_pos):
+    def select_row(self, mouse_pos):
         cell = self.get_cell(mouse_pos)
         if cell is not None:
-            if cell[0] == 0:
+            if cell[0] == 0 and cell[1] in (1, 3, 5):
                 self.special_cell_cords = -1, cell[1]
 
-            elif cell[0] == len(self.board) - 1:
+            elif cell[0] == len(self.board) - 1 and cell[1] in (1, 3, 5):
                 self.special_cell_cords = len(self.board), cell[1]
 
-            elif cell[1] == 0:
+            elif cell[1] == 0 and cell[0] in (1, 3, 5):
                 self.special_cell_cords = cell[0], -1
 
-            elif cell[1] == len(self.board) - 1:
+            elif cell[1] == len(self.board) - 1 and cell[0] in (1, 3, 5):
                 self.special_cell_cords = cell[0], len(self.board)
 
             self.update_board_screen()
+
+    def rotate_cell(self):
+        self.special_cell.rotate()
+        self.update_board_screen()
 
 
 if __name__ == '__main__':
@@ -356,9 +360,12 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                a.get_click(event.pos)
+                a.select_row(event.pos)
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 a.move_labyrinth()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                a.rotate_cell()
+
 
         # if k == 1000:
         #     print(a.move_labyrinth())
