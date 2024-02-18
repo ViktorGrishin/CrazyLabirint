@@ -272,7 +272,7 @@ class Board:
             for i in range(0, len(self.board) - 1):
                 self.board[i][j] = self.board[i + 1][j]
 
-            self.board[0][len(self.board) - 1] = self.special_cell
+            self.board[len(self.board) - 1][j] = self.special_cell
             self.special_cell = special
 
         elif self.special_cell_cords[1] == -1:
@@ -285,14 +285,14 @@ class Board:
             self.board[i][0] = self.special_cell
             self.special_cell = special
 
-        else:
+        elif self.special_cell_cords[1] == len(self.board):
             # Двигаем справа налево
             i = self.special_cell_cords[0]
             special = self.board[i][0]
             for j in range(0, len(self.board) - 1):
                 self.board[i][j] = self.board[i][j + 1]
 
-            self.board[len(self.board) - 1][0] = self.special_cell
+            self.board[i][len(self.board) - 1] = self.special_cell
             self.special_cell = special
         self.special_cell_cords = None
         self.update_board_screen()
@@ -327,7 +327,18 @@ class Board:
         cell = self.get_cell(mouse_pos)
         if cell is not None:
             if cell[0] == 0:
+                self.special_cell_cords = -1, cell[1]
 
+            elif cell[0] == len(self.board) - 1:
+                self.special_cell_cords = len(self.board), cell[1]
+
+            elif cell[1] == 0:
+                self.special_cell_cords = cell[0], -1
+
+            elif cell[1] == len(self.board) - 1:
+                self.special_cell_cords = cell[0], len(self.board)
+
+            self.update_board_screen()
 
 
 if __name__ == '__main__':
@@ -337,22 +348,22 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(size)
     k = 0
     a = Board((100, 100), (0.35, 0.35))
-    a.special_cell_cords = -1, 1
+    a.special_cell_cords = -1, -1
     a.update_board_screen()
     running = True
     while running:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                cell = a.get_cell(event.pos)
-                print(cell)
-        if k == 1000:
-            print(a.move_labyrinth())
+                a.get_click(event.pos)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                a.move_labyrinth()
+
+        # if k == 1000:
+        #     print(a.move_labyrinth())
         a.render(screen)
         pygame.display.flip()
-        k += 1
+        # k += 1
 
     terminate()
