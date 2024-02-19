@@ -10,6 +10,7 @@ CARDS = list(range(1, 25))
 SPACING = 5  # Зазор между карточками на поле
 COLOR_KEY = (255, 255, 255)
 CELL_SIZE = 50
+K = 0.5
 SPECIAL_CELL_CORDS = 500, 500
 DEFAULT_BOARD = [[101, 0, 1, 0, 2, 0, 102],
                  [0, 0, 0, 0, 0, 0, 0],
@@ -96,10 +97,10 @@ class Cell:
 
 class Board:
     def __init__(self, cords=(0, 0), board_size=(1, 1)):
-        self.players = {'yellow': [0, 0],
-                        'red': [0, 6],
-                        'green': [6, 0],
-                        'blue': [6, 6]
+        self.players = {'yellow': [[0, 0], self._load_player_images('yellow', K)],
+                        'red': [[1, 6], self._load_player_images('red', K)],
+                        'green': [[6, 2], self._load_player_images('green', K)],
+                        'blue': [[6, 4], self._load_player_images('blue', K)]
                         }
 
         self.board_size = board_size  # Коэффициент увеличения изображения поля в зависимости от экрана
@@ -253,11 +254,13 @@ class Board:
             self.special_cell.render(self.board_screen,
                                      ((self.cell_size + SPACING) * 7 + self.cell_size,
                                       (self.cell_size + SPACING) * 0 + self.cell_size))
+        # Отображаем игроков
+        self._render_player(self.board_screen)
         # Изменяем размеры поля по коэффициентам
         w, h = self.board_screen.get_size()
         w1, h1 = w * self.board_size[0], h * self.board_size[1]
         self.board_screen = pygame.transform.scale(self.board_screen, (w1, h1))
-        self._render_player(self.board_screen)
+
 
     def move_labyrinth(self):
         if self.special_cell_cords is None:
@@ -366,7 +369,30 @@ class Board:
         pass
 
     def _render_player(self, screen):
-        pass
+        for player, cords_image in self.players.items():
+            cords, image = cords_image
+            h, w = cords
+            screen.blit(image, ((self.cell_size + SPACING) * w + self.cell_size,
+                                (self.cell_size + SPACING) * h + self.cell_size))
+
+    def _load_player_images(self, color, k):
+        fullname = os.path.join('data', 'images', 'players', color + '.png')
+        image = pygame.image.load(fullname)
+        # Обработка фона
+        if COLOR_KEY is not None:
+            image = image.convert()
+            if COLOR_KEY == -1:
+                color_key = image.get_at((0, 0))
+                image.set_colorkey(color_key)
+            else:
+                image.set_colorkey(COLOR_KEY)
+        else:
+            image = image.convert_alpha()
+
+        x, y = image.get_size()
+        new_size = x * k, y * k
+        image = pygame.transform.scale(image, new_size)
+        return image
 
 
 if __name__ == '__main__':
