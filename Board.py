@@ -96,6 +96,12 @@ class Cell:
 
 class Board:
     def __init__(self, cords=(0, 0), board_size=(1, 1)):
+        self.players = {'yellow': [0, 0],
+                        'red': [0, 6],
+                        'green': [6, 0],
+                        'blue': [6, 6]
+                        }
+
         self.board_size = board_size  # Коэффициент увеличения изображения поля в зависимости от экрана
         self.cords = self.left, self.top = cords
 
@@ -251,6 +257,7 @@ class Board:
         w, h = self.board_screen.get_size()
         w1, h1 = w * self.board_size[0], h * self.board_size[1]
         self.board_screen = pygame.transform.scale(self.board_screen, (w1, h1))
+        self._render_player(self.board_screen)
 
     def move_labyrinth(self):
         if self.special_cell_cords is None:
@@ -267,6 +274,7 @@ class Board:
             self.board[0][j] = self.special_cell
             self.special_cell = special
             self.canceled_move = len(self.board), j
+
 
         elif self.special_cell_cords[0] == len(self.board):
             # Двигаем снизу вверх
@@ -303,6 +311,7 @@ class Board:
 
         self.special_cell_cords = None
         self.update_board_screen()
+        return True
 
     def get_cell(self, mouse_pos):
         k = self.board_size[0]
@@ -346,33 +355,55 @@ class Board:
                 self.special_cell_cords = cell[0], len(self.board)
 
             self.update_board_screen()
+            return True
+        return False
 
     def rotate_cell(self):
         self.special_cell.rotate()
         self.update_board_screen()
 
+    def move_player(self, color):
+        pass
+
+    def _render_player(self, screen):
+        pass
+
 
 if __name__ == '__main__':
+
     pygame.init()
     size = width, height = 1800, 800
     # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     screen = pygame.display.set_mode(size)
-    k = 0
+    # k = 0
     a = Board((100, 100), (0.35, 0.35))
     a.special_cell_cords = -1, -1
     a.update_board_screen()
+
     running = True
+    move_phase = True
+
     while running:
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 running = False
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and move_phase:
                 a.select_row(event.pos)
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                a.move_labyrinth()
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and move_phase:
+                ret = a.move_labyrinth()
+                if ret == True:
+                    move_phase = False
+                else:
+                    print(ret)
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 a.rotate_cell()
 
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (not move_phase):
+                print('Ведём работу')
 
         # if k == 1000:
         #     print(a.move_labyrinth())
