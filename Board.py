@@ -97,10 +97,10 @@ class Cell:
 
 class Board:
     def __init__(self, cords=(0, 0), board_size=(1, 1)):
-        self.players = {'yellow': [[0, 0], self._load_player_images('yellow', K)],
-                        'red': [[1, 6], self._load_player_images('red', K)],
-                        'green': [[6, 2], self._load_player_images('green', K)],
-                        'blue': [[6, 4], self._load_player_images('blue', K)]
+        self.players = {'yellow': [[0, 1], self._load_player_images('yellow', K)],
+                        'red': [[1, 0], self._load_player_images('red', K)],
+                        'green': [[6, 1], self._load_player_images('green', K)],
+                        'blue': [[1, 6], self._load_player_images('blue', K)]
                         }
 
         self.board_size = board_size  # Коэффициент увеличения изображения поля в зависимости от экрана
@@ -237,8 +237,7 @@ class Board:
         self.board_size = board_size
         self.update_board_screen()
 
-    def update_board_screen(self):
-        self.board_screen = self.start_screen.copy()
+    def _render_cells(self):
         for j in range(len(self.board)):
             for i in range(len(self.board[0])):
                 self.board[j][i].render(self.board_screen,
@@ -254,6 +253,10 @@ class Board:
             self.special_cell.render(self.board_screen,
                                      ((self.cell_size + SPACING) * 7 + self.cell_size,
                                       (self.cell_size + SPACING) * 0 + self.cell_size))
+
+    def update_board_screen(self):
+        self.board_screen = self.start_screen.copy()
+        self._render_cells()
         # Отображаем игроков
         self._render_player(self.board_screen)
         # Изменяем размеры поля по коэффициентам
@@ -261,8 +264,8 @@ class Board:
         w1, h1 = w * self.board_size[0], h * self.board_size[1]
         self.board_screen = pygame.transform.scale(self.board_screen, (w1, h1))
 
-
     def move_labyrinth(self):
+        move = target = None
         if self.special_cell_cords is None:
             return 'Выберите ряд'
         if self.special_cell_cords == self.canceled_move:
@@ -277,6 +280,8 @@ class Board:
             self.board[0][j] = self.special_cell
             self.special_cell = special
             self.canceled_move = len(self.board), j
+            move = False, j
+            target = 1
 
 
         elif self.special_cell_cords[0] == len(self.board):
@@ -289,9 +294,11 @@ class Board:
             self.board[len(self.board) - 1][j] = self.special_cell
             self.special_cell = special
             self.canceled_move = -1, j
+            move = False, j
+            target = -1
 
         elif self.special_cell_cords[1] == -1:
-            # Двигаем справа налево
+            # Двигаем слева направо
             i = self.special_cell_cords[0]
             special = self.board[i][len(self.board) - 1]
             for j in range(len(self.board) - 1, 0, -1):
@@ -300,6 +307,8 @@ class Board:
             self.board[i][0] = self.special_cell
             self.special_cell = special
             self.canceled_move = i, len(self.board)
+            move = True, i
+            target = 1
 
         elif self.special_cell_cords[1] == len(self.board):
             # Двигаем справа налево
@@ -311,7 +320,10 @@ class Board:
             self.board[i][len(self.board) - 1] = self.special_cell
             self.special_cell = special
             self.canceled_move = i, -1
+            move = True, i
+            target = -1
 
+        self._drop_players(move, target)
         self.special_cell_cords = None
         self.update_board_screen()
         return True
@@ -372,6 +384,8 @@ class Board:
         for player, cords_image in self.players.items():
             cords, image = cords_image
             h, w = cords
+            w1, h1 = image.get_size()
+
             screen.blit(image, ((self.cell_size + SPACING) * w + self.cell_size,
                                 (self.cell_size + SPACING) * h + self.cell_size))
 
@@ -394,6 +408,17 @@ class Board:
         image = pygame.transform.scale(image, new_size)
         return image
 
+    def _drop_players(self, move, target):
+        for player, cords_image in self.players.items():
+            cords, _ = cords_image
+            i, j = cords
+            if move[0]:  # Проверяем строку перемещение
+                if i == move[1]:
+                    self.players[player][0] = [i, (j + target) % len(self.board)]
+            else:  # столбец перемещения
+                if j == move[1]:
+                    self.players[player][0] = [(i + target) % len(self.board), j]
+
 
 if __name__ == '__main__':
 
@@ -403,8 +428,8 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(size)
     # k = 0
     a = Board((100, 100), (0.35, 0.35))
-    a.special_cell_cords = -1, -1
-    a.update_board_screen()
+    # a.special_cell_cords = -1, -1
+    # a.update_board_screen()
 
     running = True
     move_phase = True
@@ -421,11 +446,13 @@ if __name__ == '__main__':
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and move_phase:
                 ret = a.move_labyrinth()
                 if ret == True:
-                    move_phase = False
+                    pass
+                    # move_phase = False
                 else:
                     print(ret)
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+
                 a.rotate_cell()
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (not move_phase):
