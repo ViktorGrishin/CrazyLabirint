@@ -385,9 +385,16 @@ class Board:
             cords, image = cords_image
             h, w = cords
             w1, h1 = image.get_size()
+            dx, dy = 0, 0
+            if player == 'red':
+                dx = self.cell_size // 3 * 2
+            elif player == 'green':
+                dy = self.cell_size // 3 * 2
+            elif player == 'blue':
+                dx = dy = self.cell_size // 3 * 2
 
-            screen.blit(image, ((self.cell_size + SPACING) * w + self.cell_size,
-                                (self.cell_size + SPACING) * h + self.cell_size))
+            screen.blit(image, ((self.cell_size + SPACING) * w + self.cell_size + dx,
+                                (self.cell_size + SPACING) * h + self.cell_size + dy))
 
     def _load_player_images(self, color, k):
         fullname = os.path.join('data', 'images', 'players', color + '.png')
