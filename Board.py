@@ -391,7 +391,6 @@ class Board:
         cords = self.get_cell(mouse_pos)
         if cords is not None:
             self.players[player][0] = list(cords)
-
             self.update_board_screen()
             return True
 
@@ -480,11 +479,10 @@ if __name__ == '__main__':
                 a.rotate_cell()
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (not move_phase):
-
                 if a.move_player(next(player), event.pos):
-                    move_phase = False
-                # else:
-                #     print('Что-то пошло не так')
+                    move_phase = True
+                else:
+                    print('Нажмите на клетку на поле')
 
         # if k == 1000:
         #     print(a.move_labyrinth())
