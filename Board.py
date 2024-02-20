@@ -88,7 +88,7 @@ class Cell:
         if clockwise:
             angle = -90
         self.image = pygame.transform.rotate(self.image, angle)
-        self.rotation = (angle + self.rotation) % 360
+        self.rotation = (-angle + self.rotation) % 360
 
     def get_card(self):
         return self.card
