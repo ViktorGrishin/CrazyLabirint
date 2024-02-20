@@ -104,6 +104,9 @@ class Cell:
     def __str__(self):
         return ' '.join(map(str, (self.kind, self.rotation, self.card)))
 
+    def info(self):
+        return [self.kind, self.card, self.rotation]
+
 
 class Board:
     def __init__(self, cords=(0, 0), board_size=(1, 1)):
@@ -387,6 +390,37 @@ class Board:
         self.special_cell.rotate()
         self.update_board_screen()
 
+    def _is_correct_player_moving(self, start_cords, target, passed=[]):
+        # Рекурсивная функция проверки возможных дорог
+        i, j = start_cords
+
+        if not (0 <= i <= len(self.board) and 0 <= j <= len(self.board[0])):
+            # Клетка не на поле
+            return False
+        if start_cords in passed:
+            # Мы были уже в этой клетке
+            return False
+        passed.append(start_cords)
+        if start_cords == target:
+            # Мы уже жостигли цели
+            return True
+
+        kind, _, rotation = self.board[i][j].info()
+        # Прямая клетка
+        vars = []
+        if kind == 3:
+            if rotation in [0, 180]:
+                # Горизонтальная
+                candidats = []
+                # vars.append()
+
+        # Есть ли возможность добраться до цели?
+        for var in vars:
+            if self._is_correct_player_moving(var, target, passed):
+                return True
+        return False
+
+
     def move_player(self, player, mouse_pos):
         cords = self.get_cell(mouse_pos)
         if cords is not None:
@@ -457,7 +491,7 @@ if __name__ == '__main__':
     running = True
     move_phase = True
 
-    player = next_player()
+    give_player = next_player()
     while running:
         for event in pygame.event.get():
 
@@ -479,7 +513,19 @@ if __name__ == '__main__':
                 a.rotate_cell()
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (not move_phase):
-                if a.move_player(next(player), event.pos):
+                player = next(give_player)
+                if a.move_player(player, event.pos):
+                    move_phase = True
+                else:
+                    print('Нажмите на клетку на поле')
+
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and (not move_phase):
+                # Игрок не перемещается
+                player = next(give_player)
+                move_phase = True
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (not move_phase):
+                if a.move_player(next(give_player), event.pos):
                     move_phase = True
                 else:
                     print('Нажмите на клетку на поле')
