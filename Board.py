@@ -394,7 +394,7 @@ class Board:
         variants = []
         i, j = cell
 
-        if not (0 <= i <= len(self.board) and 0 <= j <= len(self.board[0])):
+        if not (0 <= i < len(self.board) and 0 <= j < len(self.board[0])):
             # Клетка не на поле
             return []
         kind, _, rotation = self.board[i][j].info()
@@ -405,34 +405,39 @@ class Board:
                 # Горизонтальная
                 variants.append([i, j + 1])
                 variants.append([i, j - 1])
-            else:
+            elif rotation in [90, 270]:
                 # Вертикальная
                 variants.append([i + 1, j])
                 variants.append([i - 1, j])
+            else:
+                print('Alarm!!!')
 
         elif kind == 1:
             # Угловая
             if rotation == 0:
                 variants.append([i, j + 1])
-                variants.append([i + 1, j])
+                variants.append([i - 1, j])
 
             elif rotation == 90:
                 variants.append([i, j + 1])
-                variants.append([i - 1, j])
+                variants.append([i + 1, j])
+
             elif rotation == 180:
                 variants.append([i, j - 1])
-                variants.append([i - 1, j])
-
-            else:  # rotation == 270
-                variants.append([i, j - 1])
                 variants.append([i + 1, j])
+
+            elif rotation == 270:
+                variants.append([i, j - 1])
+                variants.append([i - 1, j])
+            else:
+                print('Alarm!!!')
 
         else:
             # Т-образная
             if rotation == 0:
                 variants.append([i, j + 1])
                 variants.append([i, j - 1])
-                variants.append([i + 1, j])
+                variants.append([i - 1, j])
 
             elif rotation == 90:
                 variants.append([i + 1, j])
@@ -442,20 +447,22 @@ class Board:
             elif rotation == 180:
                 variants.append([i, j + 1])
                 variants.append([i, j - 1])
-                variants.append([i - 1, j])
+                variants.append([i + 1, j])
 
-            else:  # rotation == 270
+            elif rotation == 270:
                 variants.append([i + 1, j])
                 variants.append([i - 1, j])
                 variants.append([i, j - 1])
+            else:
+                print('Alarm!!!')
 
         return variants
 
     def _is_correct_player_moving(self, start_cords, target, passed=[]):
         # Рекурсивная функция проверки возможных дорог
-        i, j = start_cords
+        i, j = start_cords[:]
 
-        if not (0 <= i <= len(self.board) and 0 <= j <= len(self.board[0])):
+        if not (0 <= i < len(self.board) and 0 <= j < len(self.board[0])):
             # Клетка не на поле
             return False
         if start_cords in passed:
@@ -466,29 +473,34 @@ class Board:
             # Мы уже жостигли цели
             return True
 
-        kind, _, rotation = self.board[i][j].info()
-        # Прямая клетка
-        variants = []
-        if kind == 3:
-            if rotation in [0, 180]:
-                # Горизонтальная
-                candidats = []
-                # variants.append()
+
+        corr_vars = []
+        variants = self._get_vars_moving(start_cords)[:]
+        for cell in variants:
+            if start_cords in self._get_vars_moving(cell)[:]:
+                corr_vars.append(cell[:])
 
         # Есть ли возможность добраться до цели?
-        for var in variants:
-            if self._is_correct_player_moving(var, target, passed):
+        for var in corr_vars:
+            if self._is_correct_player_moving(var[:], target[:], passed[:]):
                 return True
+
         return False
 
     def move_player(self, player, mouse_pos):
-        cords = self.get_cell(mouse_pos)
-        if cords is not None:
-            self.players[player][0] = list(cords)
-            self.update_board_screen()
-            return True
+        target = self.get_cell(mouse_pos)
+        if target is not None:
+            target = list(target)[:]
+            start_cell = self.players[player][0][:]
+            print(start_cell, target)
+            if self._is_correct_player_moving(start_cell[:], target[:], passed=[]):
+                self.players[player][0] = list(target)[:]
+                self.update_board_screen()
+                return True
+            else:
+                return 'Невозможно добраться'
 
-        return False
+        return 'Нажмите на клетку на поле'
 
     def _render_player(self, screen):
         for player, cords_image in self.players.items():
@@ -552,6 +564,8 @@ if __name__ == '__main__':
     move_phase = True
 
     give_player = next_player()
+    player = next(give_player)
+    print(f'Ходит {player}')
     while running:
         for event in pygame.event.get():
 
@@ -569,26 +583,25 @@ if __name__ == '__main__':
                     print(ret)
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-
                 a.rotate_cell()
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (not move_phase):
-                player = next(give_player)
-                if a.move_player(player, event.pos):
+
+                ret = a.move_player(player, event.pos)
+                if ret is True:
                     move_phase = True
+                    player = next(give_player)
+                    print(f'Ходит {player}')
                 else:
-                    print('Нажмите на клетку на поле')
+                    print(ret)
 
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and (not move_phase):
                 # Игрок не перемещается
                 player = next(give_player)
+                print(f'Ходит {player}')
                 move_phase = True
 
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (not move_phase):
-                if a.move_player(next(give_player), event.pos):
-                    move_phase = True
-                else:
-                    print('Нажмите на клетку на поле')
+
 
         # if k == 1000:
         #     print(a.move_labyrinth())
