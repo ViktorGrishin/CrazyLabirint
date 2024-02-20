@@ -21,6 +21,16 @@ DEFAULT_BOARD = [[101, 0, 1, 0, 2, 0, 102],
                  [103, 0, 11, 0, 12, 0, 104]]
 
 
+def next_player():
+    players = ['red', 'blue', 'green', 'yellow']
+    random.shuffle(players)
+
+    i = 0
+    while True:
+        yield players[i]
+        i = (i + 1) % len(players)
+
+
 def terminate():
     pygame.quit()
     sys.exit()
@@ -377,8 +387,15 @@ class Board:
         self.special_cell.rotate()
         self.update_board_screen()
 
-    def move_player(self, color):
-        pass
+    def move_player(self, player, mouse_pos):
+        cords = self.get_cell(mouse_pos)
+        if cords is not None:
+            self.players[player][0] = list(cords)
+
+            self.update_board_screen()
+            return True
+
+        return False
 
     def _render_player(self, screen):
         for player, cords_image in self.players.items():
@@ -441,6 +458,7 @@ if __name__ == '__main__':
     running = True
     move_phase = True
 
+    player = next_player()
     while running:
         for event in pygame.event.get():
 
@@ -453,8 +471,7 @@ if __name__ == '__main__':
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and move_phase:
                 ret = a.move_labyrinth()
                 if ret == True:
-                    pass
-                    # move_phase = False
+                    move_phase = False
                 else:
                     print(ret)
 
@@ -463,7 +480,11 @@ if __name__ == '__main__':
                 a.rotate_cell()
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (not move_phase):
-                print('Ведём работу')
+
+                if a.move_player(next(player), event.pos):
+                    move_phase = False
+                # else:
+                #     print('Что-то пошло не так')
 
         # if k == 1000:
         #     print(a.move_labyrinth())
