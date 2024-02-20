@@ -390,6 +390,67 @@ class Board:
         self.special_cell.rotate()
         self.update_board_screen()
 
+    def _get_vars_moving(self, cell):
+        variants = []
+        i, j = cell
+
+        if not (0 <= i <= len(self.board) and 0 <= j <= len(self.board[0])):
+            # Клетка не на поле
+            return []
+        kind, _, rotation = self.board[i][j].info()
+
+        if kind == 3:
+            # Прямая клетка
+            if rotation in [0, 180]:
+                # Горизонтальная
+                variants.append([i, j + 1])
+                variants.append([i, j - 1])
+            else:
+                # Вертикальная
+                variants.append([i + 1, j])
+                variants.append([i - 1, j])
+
+        elif kind == 1:
+            # Угловая
+            if rotation == 0:
+                variants.append([i, j + 1])
+                variants.append([i + 1, j])
+
+            elif rotation == 90:
+                variants.append([i, j + 1])
+                variants.append([i - 1, j])
+            elif rotation == 180:
+                variants.append([i, j - 1])
+                variants.append([i - 1, j])
+
+            else:  # rotation == 270
+                variants.append([i, j - 1])
+                variants.append([i + 1, j])
+
+        else:
+            # Т-образная
+            if rotation == 0:
+                variants.append([i, j + 1])
+                variants.append([i, j - 1])
+                variants.append([i + 1, j])
+
+            elif rotation == 90:
+                variants.append([i + 1, j])
+                variants.append([i - 1, j])
+                variants.append([i, j + 1])
+
+            elif rotation == 180:
+                variants.append([i, j + 1])
+                variants.append([i, j - 1])
+                variants.append([i - 1, j])
+
+            else:  # rotation == 270
+                variants.append([i + 1, j])
+                variants.append([i - 1, j])
+                variants.append([i, j - 1])
+
+        return variants
+
     def _is_correct_player_moving(self, start_cords, target, passed=[]):
         # Рекурсивная функция проверки возможных дорог
         i, j = start_cords
@@ -407,19 +468,18 @@ class Board:
 
         kind, _, rotation = self.board[i][j].info()
         # Прямая клетка
-        vars = []
+        variants = []
         if kind == 3:
             if rotation in [0, 180]:
                 # Горизонтальная
                 candidats = []
-                # vars.append()
+                # variants.append()
 
         # Есть ли возможность добраться до цели?
-        for var in vars:
+        for var in variants:
             if self._is_correct_player_moving(var, target, passed):
                 return True
         return False
-
 
     def move_player(self, player, mouse_pos):
         cords = self.get_cell(mouse_pos)
