@@ -21,6 +21,14 @@ DEFAULT_BOARD = [[101, 0, 1, 0, 2, 0, 102],
                  [103, 0, 11, 0, 12, 0, 104]]
 
 
+def render_text(screen, text, cords):
+    font = pygame.font.Font(None, 50)
+    text = font.render(text, True, (0, 0, 0))
+    text_x = cords[0] // 2
+    text_y = cords[1] // 2
+    screen.blit(text, (text_x, text_y))
+
+
 def next_player():
     players = ['red', 'blue', 'green', 'yellow']
     random.shuffle(players)
@@ -34,6 +42,19 @@ def next_player():
 def terminate():
     pygame.quit()
     sys.exit()
+
+
+def update_screen(screen, player, text=''):
+
+    translate = {'blue': 'синий',
+                 'green': 'зелёный',
+                 'red': 'красный',
+                 'yellow': 'жёлтый'
+                 }
+
+    screen.fill((78, 145, 65))
+    render_text(screen, f"Ходит {translate[player]}", (50, 50))
+    render_text(screen, text, (50, 150))
 
 
 class Cell:
@@ -251,12 +272,12 @@ class Board:
         self.board_size = board_size
         self.update_board_screen()
 
-    def _render_cells(self, top=5, left=5):
+    def _render_cells(self, top=10, left=10):
         for j in range(len(self.board)):
             for i in range(len(self.board[0])):
                 self.board[j][i].render(self.board_screen,
-                                        ((self.cell_size + SPACING) * i + self.cell_size + top,
-                                         (self.cell_size + SPACING) * j + self.cell_size + left))
+                                        ((self.cell_size + SPACING) * i + self.cell_size + left,
+                                         (self.cell_size + SPACING) * j + self.cell_size + top))
         if not self.special_cell_cords is None:
             self.special_cell.render(self.board_screen,
                                      (((self.cell_size + SPACING) * self.special_cell_cords[1] + self.cell_size),
@@ -492,7 +513,6 @@ class Board:
         if target is not None:
             target = list(target)[:]
             start_cell = self.players[player][0][:]
-            print(start_cell, target)
             if self._is_correct_player_moving(start_cell[:], target[:], passed=[]):
                 self.players[player][0] = list(target)[:]
                 self.update_board_screen()
@@ -551,58 +571,55 @@ class Board:
 if __name__ == '__main__':
 
     pygame.init()
-    size = width, height = 1800, 800
-    # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    screen = pygame.display.set_mode(size)
-    screen.fill((59, 120, 255))
-    # k = 0
-    a = Board((100, 100), (0.35, 0.35))
-    # a.special_cell_cords = -1, -1
-    # a.update_board_screen()
+    # size = width, height = 1800, 800
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    w, h = screen.get_size()
+    a = Board((w // 8, h // 6), (0.4, 0.4))
 
     running = True
     move_phase = True
 
     give_player = next_player()
     player = next(give_player)
-    print(f'Ходит {player}')
+    update_screen(screen, player)
+    text = ''
     while running:
         for event in pygame.event.get():
-
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 running = False
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and move_phase:
                 a.select_row(event.pos)
+                text = ''
 
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and move_phase:
                 ret = a.move_labyrinth()
                 if ret == True:
                     move_phase = False
                 else:
-                    print(ret)
+                    text = ret
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 a.rotate_cell()
+                text = ''
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (not move_phase):
-
                 ret = a.move_player(player, event.pos)
                 if ret is True:
                     move_phase = True
                     player = next(give_player)
-                    print(f'Ходит {player}')
                 else:
-                    print(ret)
+                    text = ret
 
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and (not move_phase):
                 # Игрок не перемещается
                 player = next(give_player)
-                print(f'Ходит {player}')
                 move_phase = True
+                text = ''
 
         # if k == 1000:
         #     print(a.move_labyrinth())
+        update_screen(screen, player, text)
         a.render(screen)
         pygame.display.flip()
         # k += 1
