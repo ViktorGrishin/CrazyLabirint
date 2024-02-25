@@ -110,10 +110,10 @@ class Cell:
 
 class Board:
     def __init__(self, cords=(0, 0), board_size=(1, 1)):
-        self.players = {'yellow': [[0, 1], self._load_player_images('yellow', K)],
-                        'red': [[1, 0], self._load_player_images('red', K)],
-                        'green': [[6, 1], self._load_player_images('green', K)],
-                        'blue': [[1, 6], self._load_player_images('blue', K)]
+        self.players = {'yellow': [[0, 0], self._load_player_images('yellow', K)],
+                        'red': [[0, 6], self._load_player_images('red', K)],
+                        'green': [[6, 0], self._load_player_images('green', K)],
+                        'blue': [[6, 6], self._load_player_images('blue', K)]
                         }
 
         self.board_size = board_size  # Коэффициент увеличения изображения поля в зависимости от экрана
@@ -216,7 +216,8 @@ class Board:
         self.cell_size = self.special_cell.image.get_size()[0]
         self.special_cell_cords = None
         self.canceled_move = None
-        # Загружаем фон
+
+        # Создаём фон
         fullname = os.path.join('data', 'images', 'board.png')
         if os.path.isfile(fullname):
             self.start_screen = pygame.image.load(fullname)
@@ -250,12 +251,12 @@ class Board:
         self.board_size = board_size
         self.update_board_screen()
 
-    def _render_cells(self):
+    def _render_cells(self, top=5, left=5):
         for j in range(len(self.board)):
             for i in range(len(self.board[0])):
                 self.board[j][i].render(self.board_screen,
-                                        ((self.cell_size + SPACING) * i + self.cell_size,
-                                         (self.cell_size + SPACING) * j + self.cell_size))
+                                        ((self.cell_size + SPACING) * i + self.cell_size + top,
+                                         (self.cell_size + SPACING) * j + self.cell_size + left))
         if not self.special_cell_cords is None:
             self.special_cell.render(self.board_screen,
                                      (((self.cell_size + SPACING) * self.special_cell_cords[1] + self.cell_size),
@@ -473,7 +474,6 @@ class Board:
             # Мы уже жостигли цели
             return True
 
-
         corr_vars = []
         variants = self._get_vars_moving(start_cords)[:]
         for cell in variants:
@@ -506,7 +506,6 @@ class Board:
         for player, cords_image in self.players.items():
             cords, image = cords_image
             h, w = cords
-            w1, h1 = image.get_size()
             dx, dy = 0, 0
             if player == 'red':
                 dx = self.cell_size // 3 * 2
@@ -555,6 +554,7 @@ if __name__ == '__main__':
     size = width, height = 1800, 800
     # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     screen = pygame.display.set_mode(size)
+    screen.fill((59, 120, 255))
     # k = 0
     a = Board((100, 100), (0.35, 0.35))
     # a.special_cell_cords = -1, -1
@@ -600,8 +600,6 @@ if __name__ == '__main__':
                 player = next(give_player)
                 print(f'Ходит {player}')
                 move_phase = True
-
-
 
         # if k == 1000:
         #     print(a.move_labyrinth())
