@@ -45,7 +45,6 @@ def terminate():
 
 
 def update_screen(screen, player, text=''):
-
     translate = {'blue': 'синий',
                  'green': 'зелёный',
                  'red': 'красный',
@@ -115,12 +114,13 @@ class Cell:
         return self.card
 
     def render(self, screen, cords):
+        image = self.image.copy()
         if not self.card_image is None:
             # Накладываем изображение карточки на тайл ровно по центру
             w, h = self.image.get_size()
             w1, h2 = self.card_image.get_size()
-            self.image.blit(self.card_image, (w // 2 - w1 // 2, h // 2 - h2 // 2))
-        screen.blit(self.image, cords)
+            image.blit(self.card_image, (w // 2 - w1 // 2, h // 2 - h2 // 2))
+        screen.blit(image, cords)
 
     def __str__(self):
         return ' '.join(map(str, (self.kind, self.rotation, self.card)))
@@ -280,14 +280,15 @@ class Board:
                                          (self.cell_size + SPACING) * j + self.cell_size + top))
         if not self.special_cell_cords is None:
             self.special_cell.render(self.board_screen,
-                                     (((self.cell_size + SPACING) * self.special_cell_cords[1] + self.cell_size),
-                                      ((self.cell_size + SPACING) * self.special_cell_cords[0] + self.cell_size)),
-                                     )
+                                     (((self.cell_size + SPACING) * self.special_cell_cords[
+                                         1] + self.cell_size + left),
+                                      ((self.cell_size + SPACING) * self.special_cell_cords[
+                                          0] + self.cell_size + top)))
 
         else:
             self.special_cell.render(self.board_screen,
-                                     ((self.cell_size + SPACING) * 7 + self.cell_size,
-                                      (self.cell_size + SPACING) * 0 + self.cell_size))
+                                     ((self.cell_size + SPACING) * 7 + self.cell_size + left,
+                                      (self.cell_size + SPACING) * 0 + self.cell_size + top))
 
     def update_board_screen(self):
         self.board_screen = self.start_screen.copy()
@@ -571,10 +572,13 @@ class Board:
 if __name__ == '__main__':
 
     pygame.init()
+    pygame.display.set_caption('Сумасшедший лабиринт')
     # size = width, height = 1800, 800
+    # screen = pygame.display.set_mode(size)
+
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     w, h = screen.get_size()
-    a = Board((w // 8, h // 6), (0.4, 0.4))
+    a = Board((w // 4, h // 21), (0.5, 0.5))
 
     running = True
     move_phase = True
