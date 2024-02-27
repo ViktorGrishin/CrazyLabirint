@@ -578,8 +578,7 @@ if __name__ == '__main__':
 
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     w, h = screen.get_size()
-    a = Board((w // 4, h // 21), (0.5, 0.5))
-
+    a = Board((w // 4, h // 21), (780/w, 480/h))
     running = True
     move_phase = True
 
