@@ -39,7 +39,9 @@ def next_player():
         i = (i + 1) % len(players)
 
 
-def terminate():
+def terminate(score=0):
+    with open('data\\result.txt', 'w') as file:
+        file.write(str(score))
     pygame.quit()
     sys.exit()
 
@@ -572,13 +574,13 @@ class Board:
 if __name__ == '__main__':
 
     pygame.init()
-    pygame.display.set_caption('Сумасшедший лабиринт')
+    pygame.display.set_caption(open('data\\caption.txt').readline().strip())
     # size = width, height = 1800, 800
     # screen = pygame.display.set_mode(size)
 
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     w, h = screen.get_size()
-    a = Board((w // 4, h // 21), (780/w, 480/h))
+    a = Board((w // 4, h // 21), (round(780 / w, 2), round(480 / h, 2)))
     running = True
     move_phase = True
 
@@ -586,6 +588,7 @@ if __name__ == '__main__':
     player = next(give_player)
     update_screen(screen, player)
     text = ''
+    score = 0
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
@@ -611,20 +614,23 @@ if __name__ == '__main__':
                 if ret is True:
                     move_phase = True
                     player = next(give_player)
+                    score += 1
                 else:
                     text = ret
 
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and (not move_phase):
                 # Игрок не перемещается
                 player = next(give_player)
+                score += 1
                 move_phase = True
                 text = ''
 
         # if k == 1000:
         #     print(a.move_labyrinth())
+
         update_screen(screen, player, text)
         a.render(screen)
         pygame.display.flip()
         # k += 1
 
-    terminate()
+    terminate(score)
